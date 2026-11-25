@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# uv / venv
+.venv/
+uv.lock
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.python-version
+
+# Test coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Traces / event logs produced at runtime
+*.ocel
+*.jsonocel
+traces/
+
+# Generated workbooks (examples/tests synthesize these; none are committed)
+*.xlsm
+*.xlsx
+*.xlsb
+*.db
+*.ocel.json
+
+# Example output directories (examples/*/run.py --out default)
+expense_review_out/
+ticket_triage_out/
+order_fulfillment_out/
+hire_to_onboard_out/
+
+# API descriptions examples/systems/setup.py downloads from their vendors
+examples/systems/specs/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Environment / secrets — never commit credentials
+.env
+.env.*
+*.env
+!.env.example

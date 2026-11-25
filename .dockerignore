@@ -1,0 +1,18 @@
+# The build context for examples/systems/runner/Dockerfile is the repo root.
+# Keep secrets, local state, and caches out of the image.
+.env
+.env.*
+!.env.example
+.git
+.venv
+**/__pycache__
+**/*.py[cod]
+.mypy_cache
+.pytest_cache
+.ruff_cache
+*_out/
+examples/systems/out/
+examples/systems/specs/
+*.db
+*.xlsm
+*.xlsx

@@ -1,0 +1,12 @@
+[submodule "examples/systems"]
+	path = examples/systems
+	url = https://github.com/aster-test-generation/agenticharvest-systems.git
+	branch = main
+[submodule "examples/order_fulfillment"]
+	path = examples/order_fulfillment
+	url = https://github.com/aster-test-generation/agenticharvest-example-order-fulfillment.git
+	branch = main
+[submodule "examples/hire_to_onboard"]
+	path = examples/hire_to_onboard
+	url = https://github.com/aster-test-generation/agenticharvest-example-hire-to-onboard.git
+	branch = main

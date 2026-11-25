@@ -1,0 +1,148 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agenticharvest"
+version = "0.1.0"
+description = "AgenticHarvest: Process discovery for the AI agent era. Turn structured artifacts into typed agent tools, observe every call, and mine the trace into a process an agent can follow."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Rangeet Pan" }]
+keywords = ["agents", "process-mining", "ocel", "excel", "sqlite", "openapi", "workbook", "ir", "mcp", "opentelemetry"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+
+# Core stays deliberately thin: the backbone (IR contracts, tool registry,
+# event log, tracing) has no heavy runtime deps. Everything else is an extra.
+dependencies = [
+    "pydantic>=2",
+    "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+# --- Domains ---------------------------------------------------------------
+excel = ["openpyxl>=3.1", "oletools>=0.60"]
+excel-live = ["xlwings>=0.31"]
+# Live web apps described by OpenAPI 3 or Odoo's /doc self-description.
+web = ["httpx>=0.27"]
+
+# --- Channels (REST and MCP) -----------------------------------------------
+rest = ["fastapi>=0.110", "uvicorn>=0.29"]
+# The server is written against the MCP SDK 2.x low-level API.
+mcp = ["mcp>=2.2"]
+
+# --- Agent backends (orchestration.agents) --------------------------------
+# Each backend is imported lazily, so install only the one(s) you use.
+claude = ["anthropic>=0.40"]
+langchain = ["langchain-anthropic>=0.3", "langchain-core>=0.3"]
+langgraph = ["langgraph>=0.2", "langchain-anthropic>=0.3", "langchain-core>=0.3"]
+gemini = ["google-genai>=0.3"]
+# Provider-agnostic backend: talks the OpenAI-compatible Chat Completions HTTP
+# shape directly (no vendor SDK), so it works against OpenAI, a LiteLLM proxy,
+# a local server, etc. Only httpx is needed.
+openai_compatible = ["httpx>=0.27"]
+agents = ["agenticharvest[claude,langchain,langgraph,gemini,openai_compatible]"]
+
+# --- Observability & mining ----------------------------------------------
+tracing = ["opentelemetry-sdk>=1.24", "opentelemetry-exporter-otlp>=1.24"]
+
+# pm4py is deliberately NOT a dependency or an extra: its AGPL-3.0 license is
+# incompatible with shipping it as part of this Apache-2.0 project. See the
+# README section "Using pm4py" for how to install and plug it in yourself.
+all = ["agenticharvest[excel,excel-live,web,rest,mcp,tracing,agents]"]
+dev = ["pytest>=8", "ruff>=0.5", "mypy>=1.10"]
+
+[project.scripts]
+agenticharvest = "agenticharvest.gateway.channels.cli:main"
+
+# Third-party domains register here and are auto-discovered at runtime.
+[project.entry-points."agenticharvest.domains"]
+excel = "agenticharvest.domains.excel:domain"
+# Standard-library sqlite3 only, so this domain needs no extra.
+sqlite = "agenticharvest.domains.sqlite:domain"
+# Imports without httpx; calling a web tool needs the 'web' extra.
+web = "agenticharvest.domains.web:domain"
+
+# Pluggable execution backends can also register independently.
+[project.entry-points."agenticharvest.backends"]
+openpyxl = "agenticharvest.domains.excel.backends.openpyxl:backend"
+xlwings = "agenticharvest.domains.excel.backends.xlwings:backend"
+
+# Process miners register under the "agenticharvest.miners" entry point — the mining
+# engine is a plugin just like a domain. The default is the bupaR bridge
+# (bupaR itself is MIT-licensed), which needs no Python dependency (it shells out to `Rscript`); R and
+# the bupaverse packages are an optional *system* requirement, and the miner
+# stays dormant until used, reporting itself unavailable when R is absent.
+# A third-party package registers its own the same way:
+#
+#   [project.entry-points."agenticharvest.miners"]
+#   mymine = "my_package:miner"
+[project.entry-points."agenticharvest.miners"]
+bupar = "agenticharvest.mining.miners.bupar:miner"
+# Pure-Python fallback: activities, directly-follows, and variants, no R needed.
+variants = "agenticharvest.mining.variants:miner"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The real-LLM tests need live credentials and network, so they are
+# deselected by default; run them explicitly with `-m real_llm`. Live-system tests
+# run by default and skip when a system is not configured or not answering.
+addopts = "-m 'not real_llm'"
+markers = [
+    "real_llm: exercises a live LLM endpoint from .env (network + credentials)",
+    "live: calls a live web app configured in .env (see examples/systems)",
+]
+# oletools imports emit a flurry of PyparsingDeprecationWarnings from their own
+# code; silence that third-party noise so real warnings stay visible.
+filterwarnings = [
+    "ignore::DeprecationWarning:oletools.olevba",
+    "ignore:.*deprecated.*:DeprecationWarning:oletools.*",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agenticharvest"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+# Tool parameters and results are free-form JSON, typed as bare ``dict`` /
+# ``list`` throughout; spelling out ``dict[str, Any]`` everywhere adds noise
+# without catching anything.
+disallow_any_generics = false
+
+# Optional backends and engines ship without type information (or are not
+# installed at all on a minimal checkout); treat them as untyped.
+[[tool.mypy.overrides]]
+module = [
+    "anthropic.*",
+    "google.*",
+    "langchain_anthropic.*",
+    "langchain_core.*",
+    "langgraph.*",
+    "oletools.*",
+    "openpyxl.*",
+    "xlwings.*",
+    "yaml.*",
+]
+ignore_missing_imports = true

@@ -1,0 +1,11 @@
+AgenticHarvest
+Copyright IBM Corp. 2026
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The optional process-mining engine bridges to the R bupaverse packages
+(https://bupaverse.github.io/), which are MIT-licensed and are not
+redistributed with this product.
+
+pm4py (AGPL-3.0) is not a dependency of this product and is not
+redistributed with it.
